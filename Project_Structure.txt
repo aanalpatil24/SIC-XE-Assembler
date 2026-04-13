@@ -1,0 +1,37 @@
+sicxe-assembler-base/
+├── CMakeLists.txt              # Build configuration
+├── README.md                   # Documentation
+├── include/                    # C++ Headers
+│   ├── Types.hpp
+│   ├── SymbolTable.hpp
+│   ├── LiteralTable.hpp
+│   ├── OpcodeTable.hpp
+│   ├── ProgramBlock.hpp
+│   ├── Pass1.hpp
+│   ├── Pass2.hpp
+│   ├── ObjectWriter.hpp
+│   └── ErrorHandler.hpp
+├── src/                        # C++ Implementation
+│   ├── SymbolTable.cpp
+│   ├── LiteralTable.cpp
+│   ├── OpcodeTable.cpp
+│   ├── ProgramBlock.cpp
+│   ├── Pass1.cpp
+│   ├── Pass2.cpp
+│   ├── ObjectWriter.cpp
+│   ├── ErrorHandler.cpp
+│   └── main.cpp
+├── python/                     # Python Components
+│   ├── setup.py
+│   ├── sicxe_parser.py         # PLY Lex/Yacc grammar
+│   ├── assembler_wrapper.py    # High-level interface
+│   └── __init__.py
+├── bindings/                   # pybind11 C++/Python bridge
+│   └── sicxe_bindings.cpp
+└── tests/                      # pytest suite
+    ├── conftest.py
+    ├── test_integration.py
+    ├── test_pass1.py
+    └── fixtures/
+        ├── simple.asm
+        └── expected.obj
