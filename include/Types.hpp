@@ -40,6 +40,7 @@ struct Flags {
     
     Flags() : n(1), i(1), x(0), b(0), p(0), e(0) {}
     
+    // Packs flags into a single byte via bit-shifting to ensure cross-platform safety
     uint8_t toByte() const {
         return (n << 5) | (i << 4) | (x << 3) | (b << 2) | (p << 1) | e;
     }
@@ -72,7 +73,7 @@ struct Literal {
     Address address;
     int blockNumber;
     int length;
-    bool isHex;  // =X'..' vs =C'..'
+    bool isHex;  // Differentiates =X'..' from =C'..'
 };
 
 struct ProgramBlock {
@@ -82,6 +83,7 @@ struct ProgramBlock {
     int blockNumber;
 };
 
+// Exception class to safely unwind the stack upon fatal compilation errors
 class AssemblyError : public std::exception {
 private:
     std::string message;
@@ -97,7 +99,7 @@ public:
     int getLine() const { return line; }
 };
 
-// Utility functions
+// Utility functions defined inline to avoid linker ODR (One Definition Rule) violations
 inline std::string toHex(uint32_t value, int width = 6) {
     std::stringstream ss;
     ss << std::uppercase << std::hex << std::setfill('0') << std::setw(width) << (value & 0xFFFFFF);
@@ -113,5 +115,4 @@ inline std::string bytesToHex(const std::vector<Byte>& bytes) {
 }
 
 } // namespace sicxe
-
 #endif

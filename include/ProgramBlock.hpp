@@ -17,7 +17,7 @@ private:
 public:
     ProgramBlockManager();
     
-    void setBlock(const std::string& name);
+    void setBlock(const std::string& name); // Handles USE directive to switch active blocks
     int getCurrentBlockNumber() const;
     Address getCurrentLoc() const;
     void incrementLoc(int bytes);
@@ -25,11 +25,10 @@ public:
     
     Address getBlockStart(int blockNum) const;
     Address getTotalLength() const;
-    void organizeBlocks();  // Calculate final addresses
+    void organizeBlocks();  // Condenses parallel blocks into a continuous linear address space
     
     const auto& getBlocks() const { return blocks; }
 };
 
 } // namespace sicxe
-
 #endif

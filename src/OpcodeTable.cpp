@@ -7,6 +7,7 @@ OpcodeTable::OpcodeTable() {
 }
 
 void OpcodeTable::initTable() {
+    // Maps standard SIC/XE mnemonics to base hex opcodes and expected format
     // Format 1
     table["FIX"] = {0xC4, InstructionFormat::FORMAT_1, 0};
     table["FLOAT"] = {0xC0, InstructionFormat::FORMAT_1, 0};

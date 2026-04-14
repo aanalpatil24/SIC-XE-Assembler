@@ -13,7 +13,6 @@ def temp_dir():
 @pytest.fixture
 def assembler_exe():
     """Path to compiled assembler executable"""
-    # Assume built in build/ directory
     path = os.path.join(os.path.dirname(__file__), '..', 'build', 'sicxe_assembler')
     if not os.path.exists(path):
         pytest.skip("Assembler executable not built")
@@ -21,7 +20,7 @@ def assembler_exe():
 
 @pytest.fixture
 def sample_programs():
-    """Dictionary of sample SIC/XE programs"""
+    """Dictionary of sample SIC/XE programs for testing suites"""
     return {
         'simple': '''
 COPY    START   1000

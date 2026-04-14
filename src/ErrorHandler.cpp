@@ -3,6 +3,7 @@
 namespace sicxe {
 
 void ErrorHandler::report(int line, ErrorSeverity severity, const std::string& message) {
+    // Stores errors chronologically to format later
     diagnostics.emplace_back(line, severity, message);
     if (severity == ErrorSeverity::ERROR) errorCount++;
     else if (severity == ErrorSeverity::WARNING) warningCount++;

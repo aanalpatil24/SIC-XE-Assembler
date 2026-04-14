@@ -12,7 +12,7 @@ namespace sicxe {
 class LiteralTable {
 private:
     std::vector<Literal> literals;
-    std::unordered_map<std::string, size_t> indexMap;
+    std::unordered_map<std::string, size_t> indexMap; // O(1) lookup ensures no duplicate literals in memory
     int literalCounter;
     
     std::string generateName();
@@ -21,11 +21,11 @@ private:
 public:
     LiteralTable();
     
-    // Returns index of literal
     size_t insert(const std::string& value, bool isHex);
     std::optional<Literal> lookup(const std::string& value) const;
     std::optional<Literal> lookupByAddress(Address addr) const;
     
+    // Assigns memory locations to literals when LTORG or END is encountered
     void assignAddresses(Address startAddr, int blockNum);
     void clearUnassigned();
     
@@ -36,5 +36,4 @@ public:
 };
 
 } // namespace sicxe
-
 #endif

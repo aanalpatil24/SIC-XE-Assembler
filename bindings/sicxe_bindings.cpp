@@ -1,5 +1,5 @@
 #include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
+#include <pybind11/stl.h> // Auto-converts C++ std::vector to Python lists
 #include <pybind11/functional.h>
 #include "Types.hpp"
 #include "SymbolTable.hpp"
@@ -13,7 +13,7 @@ using namespace sicxe;
 PYBIND11_MODULE(pysicxe, m) {
     m.doc() = "SIC/XE Assembler Python bindings";
     
-    // Address type
+    // Bind C++ Structs as read-only Python classes
     py::class_<Symbol>(m, "Symbol")
         .def_readonly("name", &Symbol::name)
         .def_readonly("value", &Symbol::value)
@@ -31,6 +31,7 @@ PYBIND11_MODULE(pysicxe, m) {
         .def_readonly("line", &Diagnostic::line)
         .def_readonly("message", &Diagnostic::message);
     
+    // Expose core Tables and Handlers
     py::class_<SymbolTable>(m, "SymbolTable")
         .def(py::init<>())
         .def("insert", &SymbolTable::insert)
@@ -58,7 +59,6 @@ PYBIND11_MODULE(pysicxe, m) {
         .def("writeToFile", &ObjectWriter::writeToFile)
         .def("getListing", &ObjectWriter::getListing);
     
-    // Utility functions
     m.def("toHex", &toHex, "Convert value to hex string");
     m.def("bytesToHex", &bytesToHex, "Convert byte vector to hex string");
 }

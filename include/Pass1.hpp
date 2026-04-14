@@ -13,6 +13,7 @@
 
 namespace sicxe {
 
+// Pass 1 parses the file, calculates byte lengths, and builds the symbol and literal tables
 class Pass1 {
 private:
     SymbolTable& symtab;
@@ -45,5 +46,4 @@ public:
 };
 
 } // namespace sicxe
-
 #endif

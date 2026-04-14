@@ -16,8 +16,9 @@ struct TextRecord {
     
     TextRecord(Address sa) : startAddr(sa), currentLength(0) {}
     
+    // Ensures we do not exceed the OS loader limit of 30 bytes per Text Record
     bool canFit(size_t bytes) const {
-        return (currentLength + bytes) <= 30; // Max 30 bytes per text record
+        return (currentLength + bytes) <= 30; 
     }
     
     void add(const std::vector<Byte>& code) {
@@ -36,9 +37,7 @@ private:
     std::vector<std::string> modificationRecords;
     std::stringstream listingStream;
     
-    TextRecord* currentTextRecord;
-    
-    void flushTextRecord();
+    // FIX: Removed `TextRecord* currentTextRecord;` to prevent dangling pointers if std::vector reallocates
     
 public:
     ObjectWriter();
@@ -56,5 +55,4 @@ public:
 };
 
 } // namespace sicxe
-
 #endif

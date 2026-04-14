@@ -15,7 +15,7 @@ struct OpcodeEntry {
 
 class OpcodeTable {
 private:
-    std::unordered_map<std::string, OpcodeEntry> table;
+    std::unordered_map<std::string, OpcodeEntry> table; // Static map of mnemonics to machine codes
     void initTable();
     
 public:
@@ -27,5 +27,4 @@ public:
 };
 
 } // namespace sicxe
-
 #endif

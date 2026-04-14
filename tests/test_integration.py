@@ -3,10 +3,9 @@ import subprocess
 import os
 
 class TestSICXEIntegration:
-    """Integration tests for full assembly process"""
+    """Integration tests validating standard and extended executable features"""
     
     def test_simple_assembly(self, temp_dir, assembler_exe, sample_programs):
-        """Test basic assembly with symbols and instructions"""
         source_file = os.path.join(temp_dir, "test.asm")
         obj_file = os.path.join(temp_dir, "test.obj")
         
@@ -22,23 +21,17 @@ class TestSICXEIntegration:
         assert result.returncode == 0, f"Assembly failed: {result.stderr}"
         assert os.path.exists(obj_file), "Object file not created"
         
-        # Verify object file format
         with open(obj_file, 'r') as f:
             lines = f.readlines()
         
-        # Check header record
         assert lines[0].startswith('H')
         assert 'COPY' in lines[0]
         
-        # Check for text records
         text_records = [l for l in lines if l.startswith('T')]
         assert len(text_records) > 0
-        
-        # Check end record
         assert lines[-1].startswith('E')
     
     def test_literal_handling(self, temp_dir, assembler_exe, sample_programs):
-        """Test literal pool generation and LTORG"""
         source_file = os.path.join(temp_dir, "lit.asm")
         obj_file = os.path.join(temp_dir, "lit.obj")
         
@@ -56,11 +49,9 @@ class TestSICXEIntegration:
         with open(obj_file, 'r') as f:
             content = f.read()
         
-        # Verify literals appear in object code
-        assert '414243' in content or 'ABC' in content  # C'ABC' in hex
+        assert '414243' in content or 'ABC' in content 
     
     def test_error_detection(self, temp_dir, assembler_exe):
-        """Test error reporting for undefined symbols"""
         source = '''
         START   0
         LDA     UNDEFINED
@@ -78,14 +69,12 @@ class TestSICXEIntegration:
             text=True
         )
         
-        # Should fail or report error
         assert result.returncode != 0 or 'ERROR' in result.stdout
 
 class TestPythonInterface:
-    """Tests for Python PLY parser and wrapper"""
+    """Tests isolating the Python PLY grammar logic"""
     
     def test_parser_tokens(self):
-        """Test PLY lexer tokenization"""
         from python.sicxe_parser import parse_assembly
         
         source = "LABEL   LDA     #100"
@@ -98,7 +87,6 @@ class TestPythonInterface:
         assert lines[0].is_extended == False
     
     def test_extended_format_parsing(self):
-        """Test parsing of format 4 instructions"""
         from python.sicxe_parser import parse_assembly
         
         source = "        +JSUB   SUBRTN"

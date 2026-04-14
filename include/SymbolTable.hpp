@@ -10,7 +10,7 @@ namespace sicxe {
 
 class SymbolTable {
 private:
-    std::unordered_map<std::string, Symbol> symbols;
+    std::unordered_map<std::string, Symbol> symbols; // High speed hashmap for symbol lookups
     int currentBlock;
     
 public:
@@ -26,5 +26,4 @@ public:
 };
 
 } // namespace sicxe
-
 #endif

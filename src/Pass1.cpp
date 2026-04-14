@@ -27,14 +27,13 @@ bool Pass1::process(const std::vector<std::string>& sourceLines) {
         errorHandler.error(lineNum, "Missing END directive");
     }
     
-    // Assign addresses to literals not yet assigned (end of program)
+    // Flush remaining literal pool at end of program
     if (littab.hasUnassigned()) {
         Address poolStart = blockManager.getCurrentLoc();
         littab.assignAddresses(poolStart, blockManager.getCurrentBlockNumber());
         blockManager.setLoc(littab.poolEndAddress());
     }
     
-    // Calculate final block organization
     blockManager.organizeBlocks();
     programLength = blockManager.getTotalLength();
     
@@ -42,25 +41,22 @@ bool Pass1::process(const std::vector<std::string>& sourceLines) {
 }
 
 void Pass1::processLine(const std::string& line, int lineNum) {
-    // Basic parsing - in production, use PLY parser output
     std::string trimmed = line;
-    // Remove comments
     size_t commentPos = trimmed.find('.');
     if (commentPos != std::string::npos) {
         trimmed = trimmed.substr(0, commentPos);
     }
     
-    if (trimmed.empty() || std::all_of(trimmed.begin(), trimmed.end(), ::isspace)) {
+    // Ignore entirely blank lines
+    if (trimmed.empty() || std::all_of(trimmed.begin(), trimmed.end(), [](unsigned char c){ return std::isspace(c); })) {
         return;
     }
     
-    // Parse fields (simplified - assumes fixed format or tab separated)
     std::istringstream iss(trimmed);
     std::string label, opcode, operand;
     
     iss >> label;
     
-    // Check if first token is opcode (no label)
     if (optab.exists(label) || label[0] == '+' || label == "START" || 
         label == "END" || label == "BYTE" || label == "WORD" || 
         label == "RESB" || label == "RESW" || label == "USE" || 
@@ -73,7 +69,6 @@ void Pass1::processLine(const std::string& line, int lineNum) {
         iss >> opcode >> operand;
     }
     
-    // Handle extended format (+opcode)
     bool extended = false;
     if (!opcode.empty() && opcode[0] == '+') {
         extended = true;
@@ -82,7 +77,7 @@ void Pass1::processLine(const std::string& line, int lineNum) {
     
     Address currentLoc = blockManager.getCurrentLoc();
     
-    // Process label
+    // Enter label into Symbol Table
     if (!label.empty()) {
         if (symtab.contains(label)) {
             errorHandler.error(lineNum, "Duplicate symbol: " + label);
@@ -91,7 +86,6 @@ void Pass1::processLine(const std::string& line, int lineNum) {
         }
     }
     
-    // Process directive or instruction
     if (opcode == "START") {
         if (started) {
             errorHandler.error(lineNum, "Multiple START directives");
@@ -99,8 +93,13 @@ void Pass1::processLine(const std::string& line, int lineNum) {
             started = true;
             programName = label;
             if (!operand.empty()) {
-                startAddress = std::stoul(operand, nullptr, 16);
-                blockManager.setLoc(startAddress);
+                // FIX: Added try/catch to protect against stoul crashing on bad input
+                try {
+                    startAddress = std::stoul(operand, nullptr, 16);
+                    blockManager.setLoc(startAddress);
+                } catch (...) {
+                    errorHandler.error(lineNum, "Invalid START address format");
+                }
             }
         }
     } else if (opcode == "END") {
@@ -108,9 +107,9 @@ void Pass1::processLine(const std::string& line, int lineNum) {
     } else if (opcode == "BYTE") {
         int len = 1;
         if (operand[0] == 'C' && operand[1] == '\'') {
-            len = operand.length() - 3; // C'...'
+            len = operand.length() - 3; 
         } else if (operand[0] == 'X' && operand[1] == '\'') {
-            len = (operand.length() - 3 + 1) / 2; // X'...' (hex)
+            len = (operand.length() - 3 + 1) / 2; 
         }
         blockManager.incrementLoc(len);
     } else if (opcode == "WORD") {
@@ -120,18 +119,14 @@ void Pass1::processLine(const std::string& line, int lineNum) {
     } else if (opcode == "RESW") {
         blockManager.incrementLoc(3 * std::stoi(operand));
     } else if (opcode == "USE") {
-        // Switch program block
         blockManager.setBlock(operand.empty() ? "DEFAULT" : operand);
     } else if (opcode == "LTORG") {
-        // Assign current literals
         if (littab.hasUnassigned()) {
             Address poolStart = blockManager.getCurrentLoc();
             littab.assignAddresses(poolStart, blockManager.getCurrentBlockNumber());
             blockManager.setLoc(littab.poolEndAddress());
         }
     } else if (opcode == "EQU") {
-        // Handle EQU - evaluate expression for symbol value
-        // Simplified: assumes absolute value or symbol
         if (!label.empty()) {
             Address value = 0;
             bool absolute = true;
@@ -147,18 +142,17 @@ void Pass1::processLine(const std::string& line, int lineNum) {
             symtab.insert(label, value, 0, absolute);
         }
     } else if (opcode == "BASE" || opcode == "NOBASE" || opcode == "ORG") {
-        // Pass 1: no action needed
+        // Ignored in Pass 1
     } else if (optab.exists(opcode)) {
-        // Regular instruction
         int len = calculateInstructionLength(opcode, operand);
         if (extended) len = 4;
         blockManager.incrementLoc(len);
         
-        // Check for literals in operand
+        // Scan operand for implicit literal declarations
         if (!operand.empty() && operand[0] == '=') {
             bool isHex = (operand[1] == 'X');
-            size_t start = 3; // Skip =X' or =C'
-            size_t len = operand.length() - start - 1; // Remove trailing '
+            size_t start = 3; 
+            size_t len = operand.length() - start - 1; 
             std::string value = operand.substr(start, len);
             littab.insert(value, isHex);
         }
@@ -172,16 +166,15 @@ int Pass1::calculateInstructionLength(const std::string& opcode, const std::stri
     if (entry.format == InstructionFormat::FORMAT_1) return 1;
     if (entry.format == InstructionFormat::FORMAT_2) return 2;
     
-    // Check for format 4 (extended) - indicated by + in pass 2, but we check operand here
+    // Checks if large immediate value forces Format 4
     if (!operand.empty() && operand[0] == '#') {
         std::string val = operand.substr(1);
-        // If immediate value > 4095, needs format 4
         try {
             if (std::stoi(val) > 4095) return 4;
         } catch (...) {}
     }
     
-    return 3; // Default format 3
+    return 3; 
 }
 
 } // namespace sicxe

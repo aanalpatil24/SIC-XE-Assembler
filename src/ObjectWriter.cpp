@@ -4,37 +4,40 @@
 
 namespace sicxe {
 
-ObjectWriter::ObjectWriter() : currentTextRecord(nullptr), startAddress(0), programLength(0) {}
+ObjectWriter::ObjectWriter() : startAddress(0), programLength(0) {}
 
 void ObjectWriter::setHeader(const std::string& name, Address start, Address length) {
     programName = name;
     startAddress = start;
     programLength = length;
+    // Hardware spec requires program name to be exactly 6 characters
     while (programName.length() < 6) programName += ' ';
     if (programName.length() > 6) programName = programName.substr(0, 6);
 }
 
 void ObjectWriter::addObjectCode(Address loc, const std::vector<Byte>& code) {
-    if (!currentTextRecord || !currentTextRecord->canFit(code.size())) {
+    // FIX: Replaced raw pointer with safe vector reference to avoid dangling pointer on reallocation
+    if (textRecords.empty() || !textRecords.back().canFit(code.size())) {
         textRecords.emplace_back(loc);
-        currentTextRecord = &textRecords.back();
     }
-    currentTextRecord->add(code);
+    textRecords.back().add(code);
 }
 
 void ObjectWriter::addModificationRecord(Address loc, int halfBytes, bool external) {
     std::stringstream ss;
+    // Creates M-record: Signals OS loader to patch this address upon program execution
     ss << "M" << std::uppercase << std::hex << std::setfill('0') << std::setw(6) << loc
        << std::setw(2) << halfBytes << (external ? "+" : "");
     modificationRecords.push_back(ss.str());
 }
 
 void ObjectWriter::addEndRecord(Address entryPoint) {
-    // End record added during write
+    // Handled in writeToFile
 }
 
 void ObjectWriter::addListingLine(Address loc, const std::string& source, 
                                  const std::string& objectCode, const std::string& errors) {
+    // Builds the `.lst` file mapping assembly input to hex output
     listingStream << std::uppercase << std::hex << std::setfill('0') << std::setw(4) << loc 
                   << "  " << std::left << std::setfill(' ') << std::setw(20) << objectCode 
                   << "  " << source << std::endl;

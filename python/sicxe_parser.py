@@ -10,14 +10,13 @@ import re
 from dataclasses import dataclass
 from typing import List, Optional, Union
 
-# Token definitions
+# Lexical tokens expected by the parser
 tokens = (
     'LABEL', 'MNEMONIC', 'OPERAND', 'COMMENT',
     'PLUS', 'COMMA', 'HASH', 'AT', 'QUOTE',
     'NUMBER', 'STRING', 'HEX', 'REGISTER',
 )
 
-# Token patterns
 t_PLUS = r'\+'
 t_COMMA = r','
 t_HASH = r'\#'
@@ -25,21 +24,18 @@ t_AT = r'@'
 t_QUOTE = r"'"
 t_ignore = ' \t'
 
-# Registers
 registers = {
     'A': 'REGISTER', 'X': 'REGISTER', 'L': 'REGISTER',
     'B': 'REGISTER', 'S': 'REGISTER', 'T': 'REGISTER',
     'F': 'REGISTER', 'PC': 'REGISTER', 'SW': 'REGISTER'
 }
 
-# Directives
 directives = {
     'START', 'END', 'BYTE', 'WORD', 'RESB', 'RESW',
     'USE', 'LTORG', 'EQU', 'ORG', 'BASE', 'NOBASE',
     'EXTDEF', 'EXTREF', 'CSECT'
 }
 
-# SIC/XE Instructions
 instructions = {
     'ADD', 'ADDF', 'ADDR', 'AND', 'CLEAR', 'COMP', 'COMPF', 'COMPR',
     'DIV', 'DIVF', 'DIVR', 'FIX', 'FLOAT', 'HIO', 'J', 'JEQ', 'JGT',
@@ -78,7 +74,7 @@ def t_MNEMONIC(t):
         t.type = 'MNEMONIC'
         t.value = upper_val
     else:
-        t.type = 'LABEL'  # Could be label or undefined mnemonic
+        t.type = 'LABEL' 
     return t
 
 def t_NUMBER(t):
@@ -88,12 +84,12 @@ def t_NUMBER(t):
 
 def t_HEX(t):
     r'X\'[0-9A-Fa-f]+\''
-    t.value = t.value[2:-1]  # Remove X' and '
+    t.value = t.value[2:-1] 
     return t
 
 def t_STRING(t):
     r'C\'[^\']*\''
-    t.value = t.value[2:-1]  # Remove C' and '
+    t.value = t.value[2:-1] 
     return t
 
 def t_newline(t):
@@ -104,10 +100,9 @@ def t_error(t):
     print(f"Illegal character '{t.value[0]}' at line {t.lineno}")
     t.lexer.skip(1)
 
-# Build lexer
 lexer = lex.lex()
 
-# Parser rules
+# Defines grammar rules mapping assembly format constructs
 def p_program(p):
     '''program : statements'''
     p[0] = p[1]
@@ -136,7 +131,7 @@ def p_line(p):
             | LABEL MNEMONIC
             | MNEMONIC'''
     
-    if len(p) == 2:  # Just mnemonic
+    if len(p) == 2: 
         p[0] = ParsedLine(
             line_num=p.lineno(1),
             label=None,
@@ -146,9 +141,8 @@ def p_line(p):
             is_directive=p[1] in directives,
             raw_line=p.value
         )
-    elif len(p) == 3:  # LABEL MNEMONIC or MNEMONIC operand
+    elif len(p) == 3: 
         if isinstance(p[1], str) and p[1].upper() in instructions or p[1].upper() in directives:
-            # MNEMONIC operand
             p[0] = ParsedLine(
                 line_num=p.lineno(1),
                 label=None,
@@ -159,7 +153,6 @@ def p_line(p):
                 raw_line=p.value
             )
         else:
-            # LABEL MNEMONIC
             p[0] = ParsedLine(
                 line_num=p.lineno(1),
                 label=p[1],
@@ -170,7 +163,7 @@ def p_line(p):
                 raw_line=p.value
             )
     elif len(p) == 4:
-        if p[2] == '+':  # LABEL + MNEMONIC
+        if p[2] == '+': 
             p[0] = ParsedLine(
                 line_num=p.lineno(1),
                 label=p[1],
@@ -181,7 +174,6 @@ def p_line(p):
                 raw_line=p.value
             )
         else:
-            # LABEL MNEMONIC operand
             p[0] = ParsedLine(
                 line_num=p.lineno(1),
                 label=p[1],
@@ -191,7 +183,7 @@ def p_line(p):
                 is_directive=p[2] in directives,
                 raw_line=p.value
             )
-    elif len(p) == 5:  # LABEL + MNEMONIC operand
+    elif len(p) == 5: 
         p[0] = ParsedLine(
             line_num=p.lineno(1),
             label=p[1],
@@ -247,7 +239,6 @@ def p_error(p):
     else:
         print("Syntax error at EOF")
 
-# Build parser
 parser = yacc.yacc()
 
 class SICXEParser:
@@ -257,19 +248,16 @@ class SICXEParser:
         self.lines = []
     
     def parse_file(self, filename: str) -> List[ParsedLine]:
-        """Parse an assembly file"""
         with open(filename, 'r') as f:
             content = f.read()
         return self.parse_string(content)
     
     def parse_string(self, content: str) -> List[ParsedLine]:
-        """Parse assembly code from string"""
         lines = []
         line_num = 0
         
         for line in content.split('\n'):
             line_num += 1
-            # Skip empty lines
             if not line.strip() or line.strip().startswith('.'):
                 continue
                 
@@ -283,16 +271,9 @@ class SICXEParser:
         
         return lines
 
-# Convenience function
 def parse_assembly(source: Union[str, List[str]]) -> List[ParsedLine]:
-    """
-    Parse SIC/XE assembly source.
-    Args:
-        source: Either a filename (str) or list of source lines
-    """
     parser = SICXEParser()
     if isinstance(source, str) and not source.endswith('.asm'):
-        # Treat as source code
         return parser.parse_string(source)
     elif isinstance(source, str):
         return parser.parse_file(source)

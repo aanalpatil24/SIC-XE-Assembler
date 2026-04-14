@@ -13,6 +13,7 @@
 
 namespace sicxe {
 
+// Pass 2 performs actual machine code generation and displacement calculations
 class Pass2 {
 private:
     SymbolTable& symtab;
@@ -23,7 +24,7 @@ private:
     ErrorHandler& errorHandler;
     
     Address baseRegister;
-    bool baseSet;
+    bool baseSet; // Tracks if LDB has been called
     
     std::vector<Instruction> intermediate;
     
@@ -50,5 +51,4 @@ public:
 };
 
 } // namespace sicxe
-
 #endif

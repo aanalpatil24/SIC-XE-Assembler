@@ -5,6 +5,7 @@ namespace sicxe {
 SymbolTable::SymbolTable() : currentBlock(0) {}
 
 void SymbolTable::insert(const std::string& name, Address value, int block, bool absolute) {
+    // Saves parsed labels to resolve jump targets during Pass 2
     Symbol sym{name, value, absolute, false, block};
     symbols[name] = sym;
 }

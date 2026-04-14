@@ -5,6 +5,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include "Types.hpp" // Required so the compiler knows what AssemblyError is
 
 namespace sicxe {
 
@@ -14,6 +15,7 @@ enum class ErrorSeverity {
     FATAL
 };
 
+// Stores error context for the final listing file generation
 struct Diagnostic {
     int line;
     ErrorSeverity severity;
@@ -56,7 +58,7 @@ public:
     void fatal(int line, const std::string& msg) { 
         report(line, ErrorSeverity::FATAL, msg); 
         errorCount++;
-        throw AssemblyError(msg, line);
+        throw AssemblyError(msg, line); // Halts execution entirely
     }
     
     bool hasErrors() const { return errorCount > 0; }
@@ -69,5 +71,4 @@ public:
 };
 
 } // namespace sicxe
-
 #endif

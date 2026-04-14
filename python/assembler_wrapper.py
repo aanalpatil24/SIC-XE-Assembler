@@ -29,14 +29,6 @@ class SICXEAssembler:
         self.temp_dir = tempfile.mkdtemp()
         
     def assemble(self, source: str, output_name: Optional[str] = None) -> AssemblyResult:
-        """
-        Assemble SIC/XE source code.
-        
-        Args:
-            source: Assembly source code or filename
-            output_name: Base name for output files
-        """
-        # Determine input type
         if os.path.exists(source):
             input_file = source
             with open(source, 'r') as f:
@@ -47,29 +39,19 @@ class SICXEAssembler:
             with open(input_file, 'w') as f:
                 f.write(source_content)
         
-        # Parse with Python PLY first (syntax validation)
+        # Validates syntax via PLY before hitting the C++ backend
         try:
             parsed_lines = parse_assembly(source_content)
             print(f"Parsed {len(parsed_lines)} lines successfully")
         except Exception as e:
-            return AssemblyResult(
-                success=False,
-                object_file=None,
-                listing_file=None,
-                errors=[f"Parser error: {str(e)}"],
-                warnings=[],
-                symbol_table={},
-                program_length=0
-            )
+            return AssemblyResult(False, None, None, [f"Parser error: {str(e)}"], [], {}, 0)
         
-        # Generate output paths
         if output_name is None:
             output_name = os.path.join(self.temp_dir, "output")
         
         obj_file = output_name + ".obj"
         lst_file = output_name + ".lst"
         
-        # Call C++ assembler
         try:
             result = subprocess.run(
                 [self.cpp_exe, input_file, obj_file],
@@ -82,23 +64,19 @@ class SICXEAssembler:
             warnings = []
             success = (result.returncode == 0)
             
-            # Parse output for diagnostics
             for line in result.stdout.split('\n'):
                 if '[ERROR]' in line:
                     errors.append(line)
                 elif '[WARNING]' in line:
                     warnings.append(line)
             
-            # Also check stderr
             if result.stderr:
                 errors.extend(result.stderr.split('\n'))
             
-            # Extract symbol table from listing if successful
             symtab = {}
             if os.path.exists(lst_file):
                 symtab = self._extract_symtab_from_listing(lst_file)
             
-            # Get program length
             prog_len = 0
             if os.path.exists(obj_file):
                 prog_len = self._get_program_length(obj_file)
@@ -114,34 +92,15 @@ class SICXEAssembler:
             )
             
         except subprocess.TimeoutExpired:
-            return AssemblyResult(
-                success=False,
-                object_file=None,
-                listing_file=None,
-                errors=["Assembly timeout"],
-                warnings=[],
-                symbol_table={},
-                program_length=0
-            )
+            return AssemblyResult(False, None, None, ["Assembly timeout"], [], {}, 0)
         except Exception as e:
-            return AssemblyResult(
-                success=False,
-                object_file=None,
-                listing_file=None,
-                errors=[f"Execution error: {str(e)}"],
-                warnings=[],
-                symbol_table={},
-                program_length=0
-            )
+            return AssemblyResult(False, None, None, [f"Execution error: {str(e)}"], [], {}, 0)
     
     def _extract_symtab_from_listing(self, lst_file: str) -> dict:
-        """Extract symbol table from listing file"""
         symtab = {}
-        # Implementation depends on listing format
         return symtab
     
     def _get_program_length(self, obj_file: str) -> int:
-        """Extract program length from object file header"""
         try:
             with open(obj_file, 'r') as f:
                 header = f.readline()
@@ -152,7 +111,6 @@ class SICXEAssembler:
             pass
         return 0
 
-# CLI interface
 if __name__ == "__main__":
     import argparse
     
