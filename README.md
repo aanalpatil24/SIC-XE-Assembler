@@ -2,6 +2,9 @@
 
 A production-grade assembler for the Simplified Instructional Computer Extra Equipment (SIC/XE) architecture, implementing a hybrid C++/Python architecture for optimal performance and flexibility.
 
+![SIC XE Assembler Two pAss Processing](https://github.com/user-attachments/assets/ab0abdd0-9287-4366-b412-a6718e8e2d68)
+
+
 ## Architecture
 
 ### Core Components (C++17)
